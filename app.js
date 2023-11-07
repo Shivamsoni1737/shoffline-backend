@@ -45,5 +45,7 @@ app.listen(port, () => {
 });
 
 app.get("/message", (_req, res) => {
-  res.send("Hello World!");
+  const message = "Hello Words";
+  console.log(message);
+  res.send(message);
 });
