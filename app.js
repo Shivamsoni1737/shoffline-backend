@@ -12,7 +12,11 @@ dotenv.config({ path: "./config.env" });
 require("./db/connection");
 
 // Allow specific websites to access your API
-const allowedOrigins = ["http://localhost:19006", "http://localhost:3000"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://shoffline.in",
+  "https://shoffline-backend-roan.vercel.app",
+];
 
 const corsOptions = {
   origin: (origin, callback) => {
