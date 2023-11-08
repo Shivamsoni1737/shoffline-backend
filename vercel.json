@@ -9,7 +9,14 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "https://shoffline.in/api"
+      "dest": "/"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "https://shoffline.in/api",
+      "status": 301
     }
   ]
 }
