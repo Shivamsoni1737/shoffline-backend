@@ -57,41 +57,41 @@ const userSchema = mongoose.Schema({
 });
 
 //Before saving(for first time) or updating the schema run this function
-userSchema.pre("save", async function (next) {
-  //But this might hash the hased password when we'll update data other than password Thus adding if condition
+// userSchema.pre("save", async function (next) {
+//   //But this might hash the hased password when we'll update data other than password Thus adding if condition
 
-  if (this.isModified("password")) {
-    this.password = await bcrypt.hash(this.password, 10);
-  }
+//   if (this.isModified("password")) {
+//     this.password = await bcrypt.hash(this.password, 10);
+//   }
 
-  next(); // move to next statement
-});
+//   next(); // move to next statement
+// });
 
-userSchema.methods.matchPassword = async function (password) {
-  return await bcrypt.compare(password, this.password); //Boolean function
-};
+// userSchema.methods.matchPassword = async function (password) {
+//   return await bcrypt.compare(password, this.password); //Boolean function
+// };
 
-userSchema.methods.getResetPasswordToken = function () {
-  const resetToken = crypto.randomBytes(20).toString("hex"); //This token will be sent to mail (see post.js on controller => forget pass)
-  // console.log(resetToken)
+// userSchema.methods.getResetPasswordToken = function () {
+//   const resetToken = crypto.randomBytes(20).toString("hex"); //This token will be sent to mail (see post.js on controller => forget pass)
+//   // console.log(resetToken)
 
-  //now hashing and saving this token on database
-  //"sha256" is a hash algo/method
-  this.resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; //reset password token will expire within 10min of generation
+//   //now hashing and saving this token on database
+//   //"sha256" is a hash algo/method
+//   this.resetPasswordToken = crypto
+//     .createHash("sha256")
+//     .update(resetToken)
+//     .digest("hex");
+//   this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; //reset password token will expire within 10min of generation
 
-  return resetToken;
-};
+//   return resetToken;
+// };
 
 //Proving user._id and JWT_SECRET to generate token (encoded token)
-userSchema.methods.generateToken = async function () {
-  return await jwt.sign(
-    { _id: this._id, role: "USER" },
-    process.env.JWT_SECRET
-  );
-};
+// userSchema.methods.generateToken = async function () {
+//   return await jwt.sign(
+//     { _id: this._id, role: "USER" },
+//     process.env.JWT_SECRET
+//   );
+// };
 
 module.exports = mongoose.model("D_User", userSchema);

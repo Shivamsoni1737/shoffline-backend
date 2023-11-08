@@ -1,58 +1,38 @@
 const User = require("../models/user");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-exports.register = async (req, res) => {
+const register = async (req, res) => {
+  const { email, password, name, phone } = req.body;
   try {
-    const { fname, lname, email, password, phone, city, pincode, state } =
-      req.body;
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({
-        success: false,
-        message: "User with same email already exists",
-      });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "User already exists", success: false });
     }
 
-    user = await User.create({
-      name: fname + " " + lname,
-      email,
-      password,
-      phone,
-      city,
-      pincode,
-      state,
-      avatar: {
-        public_id: "Public id",
-        url: "Image url",
-      },
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ email, password: hashedPassword, name, phone });
+    await newUser.save();
+
+    const token = jwt.sign({ userId: newUser._id }, "Shoffline India", {
+      expiresIn: "1h",
     });
 
-    const token = await user.generateToken();
-    const options = {
-      // Creating cookie named "token" whose value is token
-      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), //Expired the cookie after 90 days
-      httpOnly: true,
-    };
-
-    res
-      .status(201) //201 => created
-      .cookie("token", token, options) //Option contains token expiry details
-      .json({
-        success: true,
-        user,
-        token,
-      });
-  } catch (error) {
+    res.status(201).json({ success: true, token });
+  } catch (err) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: err.message,
     });
   }
 };
 
 //User login
-exports.login = async (req, res) => {
+const login = async (req, res) => {
+  const { email, password } = req.body;
   try {
-    const { email, password } = req.body;
     let user = await User.findOne({ email }).select("+password"); //to match the password.. select should be true for password
     if (!user) {
       return res.status(400).json({
@@ -61,30 +41,18 @@ exports.login = async (req, res) => {
       });
     }
 
-    const isMatch = await user.matchPassword(password); //function is defined below User schema
-
-    if (!isMatch) {
-      return res.status(400).json({
-        success: false,
-        message: "Incorrect password",
-      });
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res
+        .status(401)
+        .json({ message: "Invalid password", success: false });
     }
 
-    const token = await user.generateToken(); // YOU FORGET TO ADD AWAIT
-    const options = {
-      // Creating cookie named "token" whose value is token
-      expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), //Expired the cookie after 9 days
-      httpOnly: true,
-    };
-
-    user.lastLogin = Date.now();
-    await user.save();
-
-    res.status(200).cookie("token", token, options).json({
-      success: true,
-      user, //from here we are fetching user._id
-      token,
+    const token = jwt.sign({ userId: user._id }, "Shoffline India", {
+      expiresIn: "1h",
     });
+
+    res.status(200).json({ token });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -94,7 +62,7 @@ exports.login = async (req, res) => {
 };
 
 //user Logout
-exports.logout = async (req, res) => {
+const logout = async (req, res) => {
   try {
     res
       .status(200)
@@ -112,7 +80,7 @@ exports.logout = async (req, res) => {
 };
 
 //My profile data
-exports.myProfile = async (req, res) => {
+const myProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) {
@@ -132,3 +100,5 @@ exports.myProfile = async (req, res) => {
     });
   }
 };
+
+module.exports = { login, register, logout, myProfile };
